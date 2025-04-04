@@ -7,7 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.RawQuery
 import androidx.room.Transaction
-import androidx.room.Upsert
+import androidx.room.Update
 import androidx.sqlite.db.SupportSQLiteQuery
 import com.dd3boh.outertune.db.daos.AlbumsDao
 import com.dd3boh.outertune.db.daos.ArtistsDao
@@ -447,4 +447,43 @@ AND NOT EXISTS (
 
     @Query("SELECT * FROM recent_activity ORDER BY date DESC")
     fun recentActivity(): Flow<List<RecentActivityEntity>>
+
+    // Lyrics related queries
+    @Query("SELECT * FROM lyrics WHERE songId = :songId AND languageCode = :languageCode")
+    suspend fun getLyrics(songId: String, languageCode: String): LyricsEntity?
+
+    @Query("SELECT * FROM lyrics WHERE songId = :songId")
+    fun getLyricsForSong(songId: String): Flow<List<LyricsEntity>>
+
+    @Query("SELECT DISTINCT languageCode FROM lyrics WHERE songId = :songId")
+    fun getAvailableLanguages(songId: String): Flow<List<String>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertLyrics(lyrics: LyricsEntity): Long
+
+    @Update
+    suspend fun updateLyrics(lyrics: LyricsEntity)
+
+    @Delete
+    suspend fun deleteLyrics(lyrics: LyricsEntity)
+
+    // Lyrics translations related queries
+    @Query("SELECT * FROM lyrics_translations WHERE lyricsId = :lyricsId")
+    fun getTranslations(lyricsId: Long): Flow<List<LyricsTranslationEntity>>
+
+    @Query("SELECT * FROM lyrics_translations WHERE lyricsId = :lyricsId AND targetLanguageCode = :languageCode")
+    suspend fun getTranslation(lyricsId: Long, languageCode: String): LyricsTranslationEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTranslation(translation: LyricsTranslationEntity)
+
+    @Update
+    suspend fun updateTranslation(translation: LyricsTranslationEntity)
+
+    @Delete
+    suspend fun deleteTranslation(translation: LyricsTranslationEntity)
+
+    @Transaction
+    @Query("SELECT * FROM lyrics WHERE songId = :songId")
+    fun getLyricsWithTranslations(songId: String): Flow<List<LyricsWithTranslations>>
 }
